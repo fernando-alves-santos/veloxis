@@ -1,5 +1,9 @@
 # VELOXIS — versão hospedada (grátis)
 
+> Projeto pessoal desenvolvido por **Fernando Alves Santos**, disponibilizado
+> aqui apenas para fins de demonstração/portfólio. Código sob todos os
+> direitos reservados — ver [`LICENSE`](./LICENSE).
+
 Esta é a primeira versão real do VELOXIS: um app com login de verdade e banco de
 dados na nuvem, que atualiza sozinho entre o celular e o notebook. Ainda é uma
 base (login + cadastro simples de veículo) — vamos completando as outras telas
@@ -87,4 +91,3 @@ npm run dev
 Nenhuma chave de API ou dado sensível deve ser commitado no repositório —
 tudo isso fica em variáveis de ambiente (`.env.local`), que já está no
 `.gitignore` e nunca vai pro GitHub.
- 
