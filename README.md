@@ -87,3 +87,4 @@ npm run dev
 Nenhuma chave de API ou dado sensível deve ser commitado no repositório —
 tudo isso fica em variáveis de ambiente (`.env.local`), que já está no
 `.gitignore` e nunca vai pro GitHub.
+ 
