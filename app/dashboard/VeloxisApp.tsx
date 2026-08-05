@@ -20,11 +20,9 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [hideData, setHideData] = useState(true);
-  const [navOpen, setNavOpen] = useState(false);
 
   function selectView(v: ViewKey) {
     setView(v);
-    setNavOpen(false);
   }
 
   async function reload() {
@@ -70,23 +68,38 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
 
   const openVehicle = vehicles.find(v => v.id === openId) || null;
 
+  const navItems: { key: ViewKey; label: string; count?: number }[] = [
+    { key: 'estoque', label: 'Meus veículos', count: counts.estoque },
+    { key: 'vendidos', label: 'Vendidos', count: counts.vendidos },
+    { key: 'garantias', label: 'Garantia', count: counts.garantias },
+    { key: 'pendencias', label: 'Pendências', count: counts.pendencias },
+    { key: 'fechamento', label: 'Fechamento' },
+  ];
+
   return (
     <div className="vx-app">
+      {/* Barra fixa no topo, visível apenas no celular: logo + navegação horizontal */}
       <div className="vx-mobile-topbar">
         <div className="vx-mobile-topbar-brand">
-          <img src="/logo.png" alt="VELOXIS" />
-          <div className="vx-mobile-topbar-user">{userEmail}</div>
+          <img src="/logo.png" alt="VELOXIS" width={112} height={107} />
         </div>
-        <button className="vx-menu-btn" aria-label="Abrir menu" onClick={() => setNavOpen(o => !o)}>
-          <MenuIcon />
-        </button>
+        <SignOutButton />
+      </div>
+      <div className="vx-mobile-nav">
+        {navItems.map(item => (
+          <button
+            key={item.key}
+            className={`vx-mobile-navpill ${view === item.key ? 'active' : ''}`}
+            onClick={() => selectView(item.key)}
+          >
+            {item.label}{item.count !== undefined ? ` (${item.count})` : ''}
+          </button>
+        ))}
       </div>
 
-      <div className={`vx-sidebar-backdrop ${navOpen ? 'vx-sidebar-open' : ''}`} onClick={() => setNavOpen(false)} />
-
-      <div className={`vx-sidebar ${navOpen ? 'vx-sidebar-open' : ''}`}>
+      <div className="vx-sidebar">
         <div className="vx-brandrow">
-          <img src="/logo.png" alt="VELOXIS" style={{ height: 40, width: 'auto', display: 'block' }} />
+          <img src="/logo.png" alt="VELOXIS" width={160} height={153} style={{ height: 40, width: 'auto', display: 'block' }} />
         </div>
         <div className="vx-tagline">Controle. Organize. Lucre.</div>
         <div className="vx-user">{userEmail}</div>
@@ -111,25 +124,6 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
 
         {(['estoque', 'vendidos', 'garantias', 'pendencias'] as ViewKey[]).includes(view) && (
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div className="vx-kpi-row vx-mobile-only">
-              <button className="vx-kpi" style={{ textAlign: 'left', cursor: 'pointer', border: view === 'estoque' ? '1px solid var(--brass-dim)' : undefined }} onClick={() => setView('estoque')}>
-                <div className="vx-kpi-label">Meus veículos</div>
-                <div className="vx-kpi-value">{counts.estoque}</div>
-              </button>
-              <button className="vx-kpi" style={{ textAlign: 'left', cursor: 'pointer', border: view === 'vendidos' ? '1px solid var(--brass-dim)' : undefined }} onClick={() => setView('vendidos')}>
-                <div className="vx-kpi-label">Vendidos</div>
-                <div className="vx-kpi-value">{counts.vendidos}</div>
-              </button>
-              <button className="vx-kpi" style={{ textAlign: 'left', cursor: 'pointer', border: view === 'garantias' ? '1px solid var(--brass-dim)' : undefined }} onClick={() => setView('garantias')}>
-                <div className="vx-kpi-label">Garantia ativa</div>
-                <div className="vx-kpi-value">{counts.garantias}</div>
-              </button>
-              <button className="vx-kpi" style={{ textAlign: 'left', cursor: 'pointer', border: view === 'pendencias' ? '1px solid var(--brass-dim)' : undefined }} onClick={() => setView('pendencias')}>
-                <div className="vx-kpi-label">Pendências</div>
-                <div className="vx-kpi-value">{counts.pendencias}</div>
-              </button>
-            </div>
-
             <div className="vx-topbar">
               <div>
                 <div className="vx-h1">{titles[view][0]}</div>
@@ -153,16 +147,6 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
         <VehicleModal vehicle={openVehicle} onClose={() => setOpenId(null)} onSaved={reload} onDeleted={reload} />
       )}
     </div>
-  );
-}
-
-function MenuIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
   );
 }
 
