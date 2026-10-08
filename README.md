@@ -4,10 +4,15 @@
 > aqui apenas para fins de demonstração/portfólio. Código sob todos os
 > direitos reservados — ver [`LICENSE`](./LICENSE).
 
-Esta é a primeira versão real do VELOXIS: um app com login de verdade e banco de
-dados na nuvem, que atualiza sozinho entre o celular e o notebook. Ainda é uma
-base (login + cadastro simples de veículo) — vamos completando as outras telas
-(despesas, venda, IPVA, fechamento mensal etc.) nas próximas etapas.
+O VELOXIS é um controle financeiro para quem compra e vende veículos por conta
+própria: login de verdade, banco de dados na nuvem e sincronização entre
+celular e notebook.
+
+Recursos: cadastro completo do veículo, despesas e IPVA, documentos e arquivos
+(PDF/foto), venda com parcelas, troca, repasse e garantia de 90 dias, fechamento
+mensal, preenchimento automático por IA a partir de PDF/foto, galeria de fotos
+com foto principal, descrição de anúncio com limpeza automática e botão de
+compartilhar (fotos + descrição) para o WhatsApp.
 
 Tudo abaixo usa **apenas contas gratuitas**.
 
@@ -18,7 +23,7 @@ Tudo abaixo usa **apenas contas gratuitas**.
    banco (guarde essa senha, mas você não vai precisar dela no dia a dia).
 3. Espere o projeto ser criado (leva 1-2 minutos).
 4. No menu lateral, vá em **SQL Editor** → **New query**.
-5. Abra o arquivo `supabase/schema.sql` deste projeto, copie todo o conteúdo,
+5. Abra o arquivo `schema.sql` deste projeto, copie todo o conteúdo,
    cole no editor e clique em **Run**.
 6. Vá em **Settings → API**. Você vai precisar de duas informações mais à frente:
    - **Project URL**
@@ -73,21 +78,31 @@ em um aparece automaticamente no outro.
    ```
    (troque pelo e-mail que você cadastrou)
 
-Por enquanto todo usuário logado enxerga os mesmos veículos (é assim que
-outra pessoa da loja vai poder usar também, cada um com seu próprio login).
-Permissões diferentes por papel (admin vs funcionário) entram numa próxima
-etapa, junto com o restante das telas do protótipo.
+Cada usuário enxerga **apenas os próprios veículos** (isolamento por linha, RLS,
+no Supabase). O papel `admin` existe na tabela `profiles`, mas ainda não muda
+nada dentro do app.
 
 ## Rodando no seu computador (opcional, para quem quiser mexer no código)
 
 ```bash
 npm install
-cp .env.local.example .env.local   # depois preencha com os dados do Supabase
+cp env.local.example .env.local   # depois preencha com os dados do Supabase
 npm run dev
 ```
+
+## Estrutura do projeto
+
+Só duas pastas contêm código do app: `app/` (telas e rota da IA) e `lib/`
+(regras, tipos e utilitários). Na raiz ficam apenas arquivos de configuração
+(`package.json`, `tsconfig.json`, `middleware.ts`, `next.config.mjs`) e os SQLs.
+Não mantenha cópias de componentes na raiz: o Next.js ignora, e elas ficam
+desatualizadas.
 
 ## Segurança
 
 Nenhuma chave de API ou dado sensível deve ser commitado no repositório —
 tudo isso fica em variáveis de ambiente (`.env.local`), que já está no
 `.gitignore` e nunca vai pro GitHub.
+
+O nome e o WhatsApp usados ao compartilhar anúncios são gravados no perfil de
+cada usuário (metadados do Supabase Auth), nunca no código.

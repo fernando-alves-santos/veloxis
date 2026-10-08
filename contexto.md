@@ -26,33 +26,38 @@ Cada usuário só vê e mexe nos **seus próprios** veículos — logins são 10
 - **Versionamento/Deploy**: código no **GitHub**, conectado à Vercel — todo push na branch principal republica o app automaticamente
 - Sem custo de infraestrutura no momento (tudo dentro dos planos gratuitos)
 
-## STATUS ATUAL
+## REGRAS DE TRABALHO COM O USUÁRIO
 
-Já implementado e funcionando:
-- Login/cadastro reais via Supabase Auth, com isolamento total de dados por usuário
-- Cadastro completo de veículo: marca, modelo, versão, transmissão, ano de fabricação/modelo, cor, km, placa (formatada estilo Mercosul, ex: `ABC-1D23`), renavam, chassi, cidade, data e valor de entrada
-- Dados do antigo proprietário (nome, CPF, RG, telefone, e-mail, endereço)
-- Situação de propriedade: em nome de (Fernando / outra pessoa / procuração / antigo proprietário) + controle de sociedade (sócio e percentual, com lucro e investimento reais divididos automaticamente)
-- Comissão da loja automática por origem (compra, troca de carro, troca de moto)
-- Despesas do veículo (valor, descrição, data), com edição e exclusão, e "Custo atual" calculado
-- Controle de IPVA (5 parcelas) — marcar uma parcela como paga já lança o valor automaticamente em Despesas
-- Documentos (tipo + link/observação) e Arquivos reais (upload de PDF/foto para o Supabase Storage)
-- Venda: dados do comprador, valor, parcelas do valor faltante com marcação de "paga" (atualiza a aba de pendências sozinho), opção de troca (cria automaticamente uma nova pasta de veículo, podendo puxar os dados do antigo proprietário direto do comprador), opção de venda por repasse (não entra no controle de garantia), garantia de 3 meses com contagem visual
-- Exclusão de veículo cadastrado
-- Telas: Meus veículos, Veículos vendidos, Garantia ativa, Minhas pendências, Fechamento mensal (KPIs + gráfico + tabela por mês)
-- Identidade visual própria: tema azul/prata, logo próprio do usuário (arquivo real, fundo tratado para ficar transparente e integrar com o app), placas estilo Mercosul, app majoritariamente em caixa alta
+- Nunca mencionar, repetir ou compartilhar chaves de API, senhas, URLs de projeto ou qualquer credencial sem consentimento explícito do usuário.
+- Antes de alterar código de telas novas, mostrar como vai ficar (mockup) e esperar aprovação.
+- Entregar só os arquivos alterados, já nas pastas corretas, e orientar passo a passo o envio ao GitHub (a Vercel republica sozinha). Enviar tudo no mesmo commit, para não gerar builds com erro.
+- Idioma: português do Brasil. Interface do app majoritariamente em CAIXA ALTA.
 
-## PRÓXIMO PASSO
+## ESTRUTURA
 
-Ajustes pedidos pelo usuário e ainda **pendentes de implementação** no código (última rodada de pedidos):
-1. Tela "Novo veículo": adicionar os mesmos blocos que já existem em "Venda" — upload de arquivos de compra e caixa de "colar informações" (rascunho)
-2. Aba Despesas: renomear campo "Item" para "Descrição", reordenar como Valor | Descrição | Data (na tabela e no formulário de adicionar), remover o campo de descrição antigo (redundante), e renomear o rótulo "Custo atual (entrada + despesas)" para apenas "Custo atual"
-3. Mover o controle de IPVA para **dentro** da aba Despesas (como uma seção que se ativa por uma caixa de seleção), posicionada logo abaixo de "Adicionar despesa" — removendo a aba IPVA separada
-4. Aba Documentos: colocar os tipos em ordem alfabética e maiúsculo; incluir "Vistoria de Transferência" e "Vistoria Cautelar"; renomear "Recibo de compra" → "Recibo do Veículo", "Recibo de venda" → "PDF da Saída (loja)", "Comprovante de transferência bancária" → "Transferência Bancária"; remover o campo de observação (manter só tipo e link)
-5. Remover a aba "Histórico" por completo
-6. Ajustar layout dos campos do antigo proprietário: caixas de CPF, RG e Telefone 40% mais estreitas; caixa de Nome do mesmo tamanho da caixa de E-mail; ordem: Nome / (CPF, RG, Telefone) / Endereço
-7. Na lista de "Veículos vendidos", mostrar a palavra "REPASSE" em vermelho quando a venda tiver sido por repasse
-8. Remover os emojis do menu lateral, deixando só o texto em maiúsculo
-9. (Decisão em aberto com o usuário) Preenchimento automático de campos a partir de PDF/foto usando IA — precisa definir se via API paga da Anthropic ou via cota gratuita do Google Gemini
+Só `app/` e `lib/` têm código do app. Arquivos soltos na raiz com o mesmo nome de componentes são cópias antigas e devem ser apagados (ver lista no histórico de conversa). Ficam na raiz: `package.json`, `tsconfig.json`, `middleware.ts`, `next.config.mjs`, `next-env.d.ts`, `schema.sql`, `fix_isolamento.sql`, `README.md`, `LICENSE`, `.gitignore`, `.env.local.example`.
 
-Depois de implementar, sempre: rodar `npm run build` localmente para validar, empacotar o projeto, e instruir o usuário a subir os arquivos no GitHub (a Vercel republica sozinha). Mudanças de banco de dados (RLS, novas tabelas/políticas) são feitas direto no SQL Editor do Supabase e **não** dependem de novo deploy do código.
+## STATUS ATUAL (07/10/2026)
+
+Implementado e funcionando:
+- Login/cadastro via Supabase Auth, isolamento total por usuário (RLS em `vehicles`, `ia_extracoes` e Storage).
+- Cadastro completo do veículo, antigo proprietário, propriedade/sociedade, comissão da loja automática.
+- Despesas (Valor | Descrição | Data) com IPVA em 5 parcelas dentro da aba Despesas; Documentos (ordem alfabética, tipos renomeados, vistorias); Arquivos reais no Storage.
+- Venda: comprador, parcelas com baixa, troca (cria novo veículo), repasse (sem garantia), garantia de 90 dias.
+- Telas: Meus veículos, Vendidos, Garantia, Pendências, Fechamento mensal.
+- Preenchimento automático por IA (Gemini) em Novo veículo e Venda, com limite de 30/dia por usuário, validação de tipo/tamanho (~3 MB) e reserva do uso antes da chamada.
+- **Aba FOTOS / DESCRIÇÃO** (nova): upload de várias fotos (comprimidas no navegador: 1600 px + miniatura 480 px, JPEG), estrela para foto principal, descrição com "LIMPAR E AJUSTAR" (remove emojis, alinha à esquerda, bullets viram "- ", remove links wa.me, troca o telefone do vendedor pelo contato do usuário), botão COMPARTILHAR.
+- **Lista em cards** com a foto principal acima da placa e botão de compartilhar no canto superior direito da foto. Compartilhar usa a Web Share API (fotos + texto) no celular; no computador oferece baixar fotos e copiar texto.
+- Contato do usuário (nome + WhatsApp) fica em `user_metadata` do Supabase Auth (`contato_nome`, `contato_telefone`) — não está no código.
+- Data "hoje" usa o fuso local (não UTC). Excluir veículo apaga também fotos/arquivos do Storage.
+
+Dados novos em `vehicles.data` (JSONB): `fotos[]` (`id, nome, path, thumbPath, data`), `fotoPrincipalId`, `descricao`.
+
+## PENDÊNCIAS / DECISÕES EM ABERTO
+
+1. Cadastro de contas está aberto a qualquer pessoa. Decidir se desliga novos cadastros no Supabase (Authentication → Sign In / Providers) ou mantém aberto para uso futuro por outras pessoas.
+2. Papel `admin` existe em `profiles`, mas o app não o usa.
+3. O limite diário da IA reduz, mas não elimina, corrida entre requisições simultâneas (só seria 100% atômico com uma função SQL/RPC).
+4. A aba Histórico foi removida da tela, mas `data.historico` ainda é gravado (inofensivo).
+5. Fotos antigas enviadas na aba Arquivos não aparecem na galeria de fotos.
+6. Em modo "Ocultar dados" a placa e os valores são mascarados, mas a foto principal continua visível (pode mostrar a placa do carro).
