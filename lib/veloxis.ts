@@ -24,6 +24,7 @@ export type AntigoProprietario = {
 };
 
 export type Arquivo = { id: string; nome: string; path: string; contexto: string; data: string };
+export type Foto = { id: string; nome: string; path: string; thumbPath: string; data: string };
 
 export type VehicleData = {
   versao?: string;
@@ -44,6 +45,9 @@ export type VehicleData = {
   venda: Venda | null;
   historico: Historico[];
   arquivos: Arquivo[];
+  fotos?: Foto[];
+  fotoPrincipalId?: string;
+  descricao?: string;
 };
 
 export type Vehicle = {
@@ -160,5 +164,21 @@ export function emptyVehicleData(): VehicleData {
     venda: null,
     historico: [],
     arquivos: [],
+    fotos: [],
+    fotoPrincipalId: '',
+    descricao: '',
   };
+}
+
+export function fotoPrincipal(v: Vehicle): Foto | null {
+  const fotos = v.data.fotos || [];
+  return fotos.find(f => f.id === v.data.fotoPrincipalId) || fotos[0] || null;
+}
+
+// Fotos com a principal sempre em primeiro (ordem usada ao compartilhar).
+export function fotosOrdenadas(v: Vehicle): Foto[] {
+  const fotos = v.data.fotos || [];
+  const p = fotoPrincipal(v);
+  if (!p) return [];
+  return [p, ...fotos.filter(f => f.id !== p.id)];
 }
