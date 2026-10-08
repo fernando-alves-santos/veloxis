@@ -9,10 +9,12 @@ import {
 import FileUploader from './FileUploader';
 import ExtractFromFile from './ExtractFromFile';
 import PlateBadge from './PlateBadge';
+import FotosDescricao from './FotosDescricao';
+import { BUCKET } from '@/lib/fotos';
 
 const up = (s: string) => s.toUpperCase();
 
-type Tab = 'dados' | 'despesas' | 'documentos' | 'venda' | 'arquivos';
+type Tab = 'dados' | 'despesas' | 'documentos' | 'venda' | 'arquivos' | 'fotos';
 
 export default function VehicleModal({ vehicle, onClose, onSaved, onDeleted }: { vehicle: Vehicle; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {
   const supabase = createClient();
@@ -52,6 +54,12 @@ export default function VehicleModal({ vehicle, onClose, onSaved, onDeleted }: {
     const { error } = await supabase.from('vehicles').delete().eq('id', v.id);
     setSaving(false);
     if (error) { alert('Erro ao excluir: ' + error.message); return; }
+    // Apaga também as fotos e arquivos do Storage, para não sobrar lixo ocupando espaço.
+    const paths = [
+      ...(v.data.fotos || []).flatMap(f => [f.path, f.thumbPath]),
+      ...(v.data.arquivos || []).map(a => a.path),
+    ].filter(Boolean);
+    if (paths.length) await supabase.storage.from(BUCKET).remove(paths);
     onDeleted();
     onClose();
   }
@@ -68,9 +76,9 @@ export default function VehicleModal({ vehicle, onClose, onSaved, onDeleted }: {
           <button className="vx-close" onClick={onClose}>✕</button>
         </div>
         <div className="vx-tabs">
-          {(['dados', 'despesas', 'documentos', 'venda', 'arquivos'] as Tab[]).map(t => (
+          {(['dados', 'despesas', 'documentos', 'venda', 'arquivos', 'fotos'] as Tab[]).map(t => (
             <button key={t} className={`vx-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-              {t === 'dados' ? 'DADOS' : t === 'despesas' ? 'DESPESAS' : t === 'documentos' ? 'DOCUMENTOS' : t === 'venda' ? 'VENDA' : 'ARQUIVOS'}
+              {t === 'dados' ? 'DADOS' : t === 'despesas' ? 'DESPESAS' : t === 'documentos' ? 'DOCUMENTOS' : t === 'venda' ? 'VENDA' : t === 'arquivos' ? 'ARQUIVOS' : 'FOTOS / DESCRIÇÃO'}
             </button>
           ))}
         </div>
@@ -80,6 +88,7 @@ export default function VehicleModal({ vehicle, onClose, onSaved, onDeleted }: {
         {tab === 'documentos' && <TabDocumentos v={v} persist={persist} />}
         {tab === 'venda' && <TabVenda v={v} persist={persist} onSaved={onSaved} />}
         {tab === 'arquivos' && <TabArquivos v={v} persist={persist} />}
+        {tab === 'fotos' && <FotosDescricao v={v} persist={persist} />}
       </div>
     </div>
   );

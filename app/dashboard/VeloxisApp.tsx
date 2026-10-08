@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
-  Vehicle, fmt, daysBetween, todayISO, folderName, despesasTotal, custoTotal, meuLucro, garantiaInfo, valorFaltante, maskValor,
+  Vehicle, fmt, daysBetween, todayISO, folderName, despesasTotal, custoTotal, meuLucro, garantiaInfo, valorFaltante, maskValor, fotoPrincipal,
 } from '@/lib/veloxis';
+import { BUCKET } from '@/lib/fotos';
 import SignOutButton from './SignOutButton';
 import NovoVeiculoForm from './NovoVeiculoForm';
 import VehicleModal from './VehicleModal';
 import Fechamento from './Fechamento';
 import PlateBadge from './PlateBadge';
+import ShareDialog from './ShareDialog';
 
 type ViewKey = 'estoque' | 'vendidos' | 'garantias' | 'pendencias' | 'fechamento' | 'novo';
 
@@ -20,6 +22,8 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
   const [hideData, setHideData] = useState(true);
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const [shareId, setShareId] = useState<string | null>(null);
 
   function selectView(v: ViewKey) {
     setView(v);
@@ -31,6 +35,28 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
   }
 
   useEffect(() => { reload(); }, []);
+
+  // Miniaturas da foto principal de cada veículo (links temporários, só pedimos as que faltam).
+  useEffect(() => {
+    const faltando = vehicles
+      .map(v => fotoPrincipal(v)?.thumbPath)
+      .filter((p): p is string => !!p && !thumbUrls[p]);
+    if (!faltando.length) return;
+    supabase.storage.from(BUCKET).createSignedUrls(faltando, 60 * 60).then(({ data }) => {
+      if (!data) return;
+      const novo: Record<string, string> = {};
+      data.forEach(d => { if (d.path && d.signedUrl) novo[d.path] = d.signedUrl; });
+      setThumbUrls(prev => ({ ...prev, ...novo }));
+    });
+  }, [vehicles]);
+
+  function pedirCompartilhar(v: Vehicle) {
+    if (!(v.data.fotos || []).length) {
+      alert('Este veículo ainda não tem fotos. Abra a pasta do veículo e adicione na aba FOTOS / DESCRIÇÃO.');
+      return;
+    }
+    setShareId(v.id);
+  }
 
   const counts = useMemo(() => ({
     estoque: vehicles.filter(v => v.status === 'estoque').length,
@@ -67,6 +93,7 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
   };
 
   const openVehicle = vehicles.find(v => v.id === openId) || null;
+  const shareVehicle = vehicles.find(v => v.id === shareId) || null;
 
   const navItems: { key: ViewKey; label: string; count?: number }[] = [
     { key: 'estoque', label: 'Meus veículos', count: counts.estoque },
@@ -138,7 +165,7 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
                 <button className="vx-btn" onClick={() => setView('novo')}>+ Novo veículo</button>
               </div>
             </div>
-            <ListView list={listFor(view)} view={view} onOpen={setOpenId} hideData={hideData} />
+            <ListView list={listFor(view)} view={view} onOpen={setOpenId} hideData={hideData} thumbUrls={thumbUrls} onShare={pedirCompartilhar} />
           </div>
         )}
       </div>
@@ -146,11 +173,12 @@ export default function VeloxisApp({ initialVehicles, userEmail }: { initialVehi
       {openVehicle && (
         <VehicleModal vehicle={openVehicle} onClose={() => setOpenId(null)} onSaved={reload} onDeleted={reload} />
       )}
+      {shareVehicle && <ShareDialog vehicle={shareVehicle} onClose={() => setShareId(null)} />}
     </div>
   );
 }
 
-function ListView({ list, view, onOpen, hideData }: { list: Vehicle[]; view: ViewKey; onOpen: (id: string) => void; hideData: boolean }) {
+function ListView({ list, view, onOpen, hideData, thumbUrls, onShare }: { list: Vehicle[]; view: ViewKey; onOpen: (id: string) => void; hideData: boolean; thumbUrls: Record<string, string>; onShare: (v: Vehicle) => void }) {
   if (list.length === 0) {
     return (
       <div className="vx-empty">
@@ -160,13 +188,15 @@ function ListView({ list, view, onOpen, hideData }: { list: Vehicle[]; view: Vie
     );
   }
   return (
-    <div className="vx-list">
-      {list.map(v => <VehicleRow key={v.id} v={v} onOpen={onOpen} hideData={hideData} />)}
+    <div className="vx-vgrid">
+      {list.map(v => <VehicleRow key={v.id} v={v} onOpen={onOpen} hideData={hideData} thumbUrls={thumbUrls} onShare={onShare} />)}
     </div>
   );
 }
 
-function VehicleRow({ v, onOpen, hideData }: { v: Vehicle; onOpen: (id: string) => void; hideData: boolean }) {
+function VehicleRow({ v, onOpen, hideData, thumbUrls, onShare }: { v: Vehicle; onOpen: (id: string) => void; hideData: boolean; thumbUrls: Record<string, string>; onShare: (v: Vehicle) => void }) {
+  const principal = fotoPrincipal(v);
+  const thumb = principal ? thumbUrls[principal.thumbPath] : '';
   const val = (n: number) => (hideData ? maskValor() : fmt(n));
   let sub: React.ReactNode = null;
   let badges: React.ReactNode = null;
@@ -195,16 +225,36 @@ function VehicleRow({ v, onOpen, hideData }: { v: Vehicle; onOpen: (id: string) 
   return (
     <div className="vx-glow">
       <div className="vx-glow-inner">
-        <div className="vx-list-row" onClick={() => onOpen(v.id)}>
-          <PlateBadge placa={v.placa} size="sm" hide={hideData} />
-          <div className="vx-list-main">
+        <div className="vx-vcard" onClick={() => onOpen(v.id)}>
+          <div className="vx-vcard-photo">
+            {thumb ? <img src={thumb} alt="" loading="lazy" /> : <div className="vx-vcard-nophoto">{principal ? '...' : 'SEM FOTO'}</div>}
+            <button
+              className={`vx-sharebtn ${principal ? '' : 'off'}`}
+              title="Compartilhar"
+              aria-label="Compartilhar"
+              onClick={e => { e.stopPropagation(); onShare(v); }}
+            >
+              <ShareIcon />
+            </button>
+          </div>
+          <div className="vx-vcard-body">
+            <div><PlateBadge placa={v.placa} size="sm" hide={hideData} /></div>
             <div className="vx-list-title">{folderName(v)}</div>
             <div className="vx-list-sub">{sub}</div>
+            {badges && <div className="vx-list-badges">{badges}</div>}
           </div>
-          <div className="vx-list-badges">{badges}</div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+      <line x1="8.6" y1="13.5" x2="15.4" y2="17.5" /><line x1="15.4" y1="6.5" x2="8.6" y2="10.5" />
+    </svg>
   );
 }
 
