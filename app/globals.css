@@ -220,3 +220,34 @@ a{color:var(--brass);}
   .vx-login-logo{height:76px;}
   .vx-login-title{font-size:26px;}
 }
+
+/* ---- Lista em cards com foto principal + botão compartilhar ---- */
+.vx-vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;}
+.vx-vgrid .vx-glow{height:100%;}
+.vx-vgrid .vx-glow-inner{height:100%;}
+.vx-vcard{cursor:pointer;display:flex;flex-direction:column;height:100%;}
+.vx-vcard:hover{background:rgba(255,255,255,.03);}
+.vx-vcard-photo{position:relative;aspect-ratio:16/9;background:#0e1320;border-bottom:1px solid var(--line);}
+.vx-vcard-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.vx-vcard-nophoto{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#4a5568;font-size:11px;letter-spacing:1px;}
+.vx-sharebtn{position:absolute;top:10px;right:10px;width:38px;height:38px;border-radius:50%;border:none;background:var(--brass-dim);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.45);}
+.vx-sharebtn:hover{background:var(--brass);}
+.vx-sharebtn.off{background:rgba(20,26,38,.85);color:#7a8390;border:1px solid var(--line);}
+.vx-vcard-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px;flex:1;}
+.vx-vcard .vx-list-title{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35;}
+.vx-vcard .vx-list-sub{flex-direction:column;gap:3px;margin-top:0;}
+.vx-vcard .vx-list-badges{max-width:none;justify-content:flex-start;}
+
+/* ---- Aba Fotos / Descrição ---- */
+.vx-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;}
+.vx-foto{position:relative;aspect-ratio:4/3;background:var(--surface2);border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.vx-foto.principal{border:2px solid var(--brass);}
+.vx-foto img{width:100%;height:100%;object-fit:cover;display:block;}
+.vx-foto-vazia{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);}
+.vx-foto-tag{position:absolute;left:6px;top:6px;background:var(--brass);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.5px;}
+.vx-foto-btn{position:absolute;right:6px;width:28px;height:28px;border:none;border-radius:50%;background:rgba(10,13,18,.72);cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;}
+.vx-foto-btn.star{top:6px;}
+.vx-foto-btn.del{bottom:6px;color:#fff;font-size:12px;}
+.vx-foto-btn.del:hover{background:var(--red);}
+.vx-foto-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px dashed #3b4658;color:var(--muted);font-size:11px;letter-spacing:.5px;cursor:pointer;background:transparent;}
+.vx-foto-add:hover{color:var(--brass);border-color:var(--brass);}
